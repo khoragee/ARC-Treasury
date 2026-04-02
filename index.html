@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Arc Treasury</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0a0a0f; color: #fff; font-family: 'Courier New', monospace; min-height: 100vh; padding: 40px 20px; }
+    .container { max-width: 640px; margin: 0 auto; }
+    h1 { color: #00c2ff; font-size: 24px; margin-bottom: 4px; }
+    .subtitle { color: #555; font-size: 12px; margin-bottom: 32px; word-break: break-all; }
+    .card { background: #13131a; border: 1px solid #1e1e2e; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+    .card h2 { color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
+    .stat { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #1e1e2e; }
+    .stat:last-child { border-bottom: none; }
+    .stat-label { color: #666; font-size: 13px; }
+    .stat-value { color: #fff; font-size: 14px; font-weight: bold; }
+    .stat-value.green { color: #00ff88; }
+    .stat-value.red { color: #ff4444; }
+    .stat-value.yellow { color: #ffaa00; }
+    .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    button { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 13px; font-weight: bold; transition: opacity 0.2s; }
+    button:hover { opacity: 0.85; }
+    .btn-connect { background: #00c2ff; color: #000; grid-column: 1 / -1; }
+    .btn-refresh { background: #1e1e2e; color: #fff; grid-column: 1 / -1; }
+    .btn-payout { background: #00ff88; color: #000; }
+    .btn-pause { background: #ff4444; color: #fff; }
+    .btn-resume { background: #ffaa00; color: #000; }
+    .btn-scheduled { background: #7c3aed; color: #fff; }
+    .status { background: #13131a; border: 1px solid #1e1e2e; border-radius: 8px; padding: 14px; margin-top: 16px; color: #ffcc00; font-size: 13px; min-height: 48px; word-break: break-all; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+    .badge.green { background: #00ff8822; color: #00ff88; }
+    .badge.red { background: #ff444422; color: #ff4444; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>⚡ Arc Treasury</h1>
+  <p class="subtitle">Contract: 0x07601e157CB5132d81292ebF3E03723E551D2BC3</p>
+
+  <div class="card">
+    <h2>Treasury Status</h2>
+    <div class="stat">
+      <span class="stat-label">💰 Balance</span>
+      <span class="stat-value green" id="balance">Loading...</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">👥 Contributors</span>
+      <span class="stat-value" id="contributors">Loading...</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">⚠️ Low Balance</span>
+      <span class="stat-value" id="lowBalance">Loading...</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">🔒 Status</span>
+      <span class="stat-value" id="paused">Loading...</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">👛 Connected Wallet</span>
+      <span class="stat-value" id="wallet" style="color:#555">Not connected</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Actions</h2>
+    <div class="btn-grid">
+      <button class="btn-connect" onclick="connectWallet()">Connect MetaMask</button>
+      <button class="btn-refresh" onclick="loadData()">🔄 Refresh Data</button>
+      <button class="btn-payout" onclick="manualPayout()">💸 Manual Payout</button>
+      <button class="btn-scheduled" onclick="scheduledPayout()">⏰ Scheduled Payout</button>
+      <button class="btn-pause" onclick="pauseTreasury()">⛔ Pause Treasury</button>
+      <button class="btn-resume" onclick="resumeTreasury()">✅ Resume Treasury</button>
+    </div>
+  </div>
+
+  <div class="status" id="status">Ready. Connect your wallet to interact.</div>
+</div>
+
+<script>
+const CONTRACT = "0x07601e157CB5132d81292ebF3E03723E551D2BC3";
+const RPC = "https://rpc.testnet.arc.network";
+const ABI = [
+  "function getTreasuryBalance() view returns (uint256)",
+  "function checkLowBalance() view returns (bool)",
+  "function getContributorCount() view returns (uint256)",
+  "function paused() view returns (bool)",
+  "function executeScheduledPayout() external",
+  "function manualPayout() external",
+  "function triggerPricePause(string reason) external",
+  "function resume() external"
+];
+
+const provider = new ethers.JsonRpcProvider(RPC);
+const readContract = new ethers.Contract(CONTRACT, ABI, provider);
+let signer = null;
+
+function setStatus(msg) { document.getElementById("status").innerText = msg; }
+
+async function loadData() {
+  try {
+    setStatus("Loading data...");
+    const bal = await readContract.getTreasuryBalance();
+    const low = await readContract.checkLowBalance();
+    const count = await readContract.getContributorCount();
+    const paused = await readContract.paused();
+    document.getElementById("balance").innerText = ethers.formatUnits(bal, 6) + " USDC";
+    document.getElementById("contributors").innerText = count.toString();
+    document.getElementById("lowBalance").innerHTML = low ? '<span class="badge red">YES</span>' : '<span class="badge green">No</span>';
+    document.getElementById("paused").innerHTML = paused ? '<span class="badge red">PAUSED</span>' : '<span class="badge green">Active</span>';
+    setStatus("Data loaded successfully.");
+  } catch(e) { setStatus("Error loading data: " + e.message); }
+}
+
+async function connectWallet() {
+  if (!window.ethereum) return setStatus("MetaMask not found. Please install it.");
+  try {
+    const web3Provider = new ethers.BrowserProvider(window.ethereum);
+    await web3Provider.send("eth_requestAccounts", []);
+    signer = await web3Provider.getSigner();
+    const addr = await signer.getAddress();
+    document.getElementById("wallet").innerText = addr.slice(0,6) + "..." + addr.slice(-4);
+    setStatus("Wallet connected: " + addr);
+    loadData();
+  } catch(e) { setStatus("Connection failed: " + e.message); }
+}
+
+function getWriteContract() {
+  if (!signer) { setStatus("Connect your wallet first."); return null; }
+  return new ethers.Contract(CONTRACT, ABI, signer);
+}
+
+async function manualPayout() {
+  const c = getWriteContract(); if (!c) return;
+  try { setStatus("Sending manual payout..."); const tx = await c.manualPayout(); await tx.wait(); setStatus("✅ Payout successful! TX: " + tx.hash); loadData(); }
+  catch(e) { setStatus("Error: " + e.message); }
+}
+
+async function scheduledPayout() {
+  const c = getWriteContract(); if (!c) return;
+  try { setStatus("Triggering scheduled payout..."); const tx = await c.executeScheduledPayout(); await tx.wait(); setStatus("✅ Scheduled payout done! TX: " + tx.hash); loadData(); }
+  catch(e) { setStatus("Error: " + e.message); }
+}
+
+async function pauseTreasury() {
+  const c = getWriteContract(); if (!c) return;
+  try { setStatus("Pausing treasury..."); const tx = await c.triggerPricePause("Manual pause"); await tx.wait(); setStatus("⛔ Treasury paused. TX: " + tx.hash); loadData(); }
+  catch(e) { setStatus("Error: " + e.message); }
+}
+
+async function resumeTreasury() {
+  const c = getWriteContract(); if (!c) return;
+  try { setStatus("Resuming treasury..."); const tx = await c.resume(); await tx.wait(); setStatus("✅ Treasury resumed. TX: " + tx.hash); loadData(); }
+  catch(e) { setStatus("Error: " + e.message); }
+}
+
+loadData();
+</script>
+</body>
+</html>
+```
