@@ -4,7 +4,7 @@ import * as fs from "fs";
 dotenv.config();
 
 async function main() {
-    const provider = new ethers.JsonRpcProvider("https://rpc.testnet.arc.network");
+    const provider = new ethers.JsonRpcProvider("https://arc-testnet.drpc.org");
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
     console.log("Deploying with account:", wallet.address);
 
