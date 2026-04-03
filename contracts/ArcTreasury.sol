@@ -127,6 +127,6 @@ contract ArcTreasury {
     }
 
     function getTreasuryBalance() external view returns (uint256) {
-        return usdc.balanceOf(address(this));
-    }
+    return address(this).balance / 1e12;
+}
 }
