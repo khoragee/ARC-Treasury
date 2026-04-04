@@ -1061,7 +1061,7 @@
     const CONTRACT = "0xB1C04eCeFb0ff42b83daA94Bf5E34245aB9864cF";
     const RPC = "https://arc-testnet.drpc.org";
     const ABI = [
-      "function getTreasuryBalance() view returns (uint256)",
+
       "function checkLowBalance() view returns (bool)",
       "function getContributorCount() view returns (uint256)",
       "function paused() view returns (bool)",
@@ -1099,13 +1099,11 @@
 
     async function loadData() {
       try {
-        const [bal, low, count, paused] = await Promise.all([
-          readContract.getTreasuryBalance(),
-          readContract.checkLowBalance(),
-          readContract.getContributorCount(),
-          readContract.paused()
-        ]);
-        document.getElementById("balance").innerText = parseFloat(ethers.formatUnits(bal, 6)).toLocaleString();
+        const bal = await provider.getBalance("0xB1C04eCeFb0ff42b83daA94Bf5E34245aB9864cF");
+        const count = await readContract.getContributorCount();
+        const paused = await readContract.paused();
+        const low = bal < ethers.parseEther("100");
+        document.getElementById("balance").innerText = parseFloat(ethers.formatEther(bal)).toFixed(2);
         document.getElementById("contributors").innerText = count.toString();
         document.getElementById("lowBalanceVal").innerHTML = low
           ? '<div class="stat-chip chip-red">⚠ Low Balance</div>'
@@ -1116,7 +1114,6 @@
         addLog("On-chain data refreshed", "blue");
       } catch (e) { addLog("Failed to load: " + e.message.slice(0, 60), "red"); }
     }
-
     async function connectWallet() {
       if (!window.ethereum) return addLog("MetaMask not detected", "red");
       try {
