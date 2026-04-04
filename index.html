@@ -1113,94 +1113,101 @@
           : '<div class="stat-chip chip-green">● Active</div>';
         addLog("On-chain data refreshed", "blue");
       } catch (e) { addLog("Failed to load: " + e.message.slice(0, 60), "red"); }
-    }
-    async function connectWallet() {
-      if (!window.ethereum) return addLog("MetaMask not detected", "red");
-      try {
-        const p = new ethers.BrowserProvider(window.ethereum);
-        await p.send("eth_requestAccounts", []);
-        signer = await p.getSigner();
-        const addr = await signer.getAddress();
-        const btn = document.getElementById("connect-btn");
-        btn.innerText = addr.slice(0, 6) + "..." + addr.slice(-4);
-        btn.classList.add("connected");
-        addLog("Wallet connected: " + addr.slice(0, 10) + "...", "green");
-        loadData();
-      } catch (e) { addLog("Connection failed: " + e.message.slice(0, 60), "red"); }
-    }
+      async function connectWallet() {
+        if (!window.ethereum) return addLog("MetaMask not detected. Please install it.", "red");
+        if (signer) {
+          signer = null;
+          const btn = document.getElementById("connect-btn");
+          btn.innerText = "Connect Wallet";
+          btn.classList.remove("connected");
+          addLog("Wallet disconnected", "dim");
+          return;
+        }
+        try {
+          const p = new ethers.BrowserProvider(window.ethereum);
+          await p.send("eth_requestAccounts", []);
+          signer = await p.getSigner();
+          const addr = await signer.getAddress();
+          const btn = document.getElementById("connect-btn");
+          btn.innerText = addr.slice(0, 6) + "..." + addr.slice(-4) + " ✕";
+          btn.classList.add("connected");
+          addLog("Wallet connected: " + addr, "green");
+          loadData();
+        } catch (e) { addLog("Connection failed: " + e.message.slice(0, 60), "red"); }
+      }
 
-    function getWrite() {
-      if (!signer) { addLog("Connect wallet first", "red"); return null; }
-      return new ethers.Contract(CONTRACT, ABI, signer);
-    }
+      function getWrite() {
+        if (!signer) { addLog("Connect wallet first", "red"); return null; }
+        return new ethers.Contract(CONTRACT, ABI, signer);
+      }
 
-    async function manualPayout() {
-      const c = getWrite(); if (!c) return;
-      try {
-        setTx("Broadcasting manual payout...", "active");
-        addLog("Initiating manual payout...", "gold");
-        const tx = await c.manualPayout();
-        await tx.wait();
-        setTx("✓ Payout confirmed — " + tx.hash, "success");
-        addLog("Manual payout executed — " + tx.hash.slice(0, 18) + "...", "green");
-        loadData();
-      } catch (e) { setTx("Failed: " + e.message.slice(0, 80), "error"); addLog("Payout failed: " + e.message.slice(0, 60), "red"); }
-    }
+      async function manualPayout() {
+        const c = getWrite(); if (!c) return;
+        try {
+          setTx("Broadcasting manual payout...", "active");
+          addLog("Initiating manual payout...", "gold");
+          const tx = await c.manualPayout();
+          await tx.wait();
+          setTx("✓ Payout confirmed — " + tx.hash, "success");
+          addLog("Manual payout executed — " + tx.hash.slice(0, 18) + "...", "green");
+          loadData();
+        } catch (e) { setTx("Failed: " + e.message.slice(0, 80), "error"); addLog("Payout failed: " + e.message.slice(0, 60), "red"); }
+      }
 
-    async function scheduledPayout() {
-      const c = getWrite(); if (!c) return;
-      try {
-        setTx("Checking schedule...", "active");
-        const tx = await c.executeScheduledPayout();
-        await tx.wait();
-        setTx("✓ Scheduled payout done — " + tx.hash, "success");
-        addLog("Scheduled payout executed — " + tx.hash.slice(0, 18) + "...", "green");
-        loadData();
-      } catch (e) { setTx("Failed: " + e.message.slice(0, 80), "error"); addLog("Failed: " + e.message.slice(0, 60), "red"); }
-    }
+      async function scheduledPayout() {
+        const c = getWrite(); if (!c) return;
+        try {
+          setTx("Checking schedule...", "active");
+          const tx = await c.executeScheduledPayout();
+          await tx.wait();
+          setTx("✓ Scheduled payout done — " + tx.hash, "success");
+          addLog("Scheduled payout executed — " + tx.hash.slice(0, 18) + "...", "green");
+          loadData();
+        } catch (e) { setTx("Failed: " + e.message.slice(0, 80), "error"); addLog("Failed: " + e.message.slice(0, 60), "red"); }
+      }
 
-    async function pauseTreasury() {
-      const c = getWrite(); if (!c) return;
-      try {
-        setTx("Pausing treasury...", "active");
-        const tx = await c.triggerPricePause("Manual pause via dashboard");
-        await tx.wait();
-        setTx("⛔ Treasury paused — " + tx.hash, "error");
-        addLog("Treasury paused — " + tx.hash.slice(0, 18) + "...", "red");
-        loadData();
-      } catch (e) { setTx("Failed: " + e.message.slice(0, 80), "error"); addLog("Pause failed: " + e.message.slice(0, 60), "red"); }
-    }
+      async function pauseTreasury() {
+        const c = getWrite(); if (!c) return;
+        try {
+          setTx("Pausing treasury...", "active");
+          const tx = await c.triggerPricePause("Manual pause via dashboard");
+          await tx.wait();
+          setTx("⛔ Treasury paused — " + tx.hash, "error");
+          addLog("Treasury paused — " + tx.hash.slice(0, 18) + "...", "red");
+          loadData();
+        } catch (e) { setTx("Failed: " + e.message.slice(0, 80), "error"); addLog("Pause failed: " + e.message.slice(0, 60), "red"); }
+      }
 
-    async function resumeTreasury() {
-      const c = getWrite(); if (!c) return;
-      try {
-        setTx("Resuming...", "active");
-        const tx = await c.resume();
-        await tx.wait();
-        setTx("✓ Treasury active — " + tx.hash, "success");
-        addLog("Treasury resumed — " + tx.hash.slice(0, 18) + "...", "green");
-        loadData();
-      } catch (e) { setTx("Failed: " + e.message.slice(0, 80), "error"); addLog("Resume failed: " + e.message.slice(0, 60), "red"); }
-    }
+      async function resumeTreasury() {
+        const c = getWrite(); if (!c) return;
+        try {
+          setTx("Resuming...", "active");
+          const tx = await c.resume();
+          await tx.wait();
+          setTx("✓ Treasury active — " + tx.hash, "success");
+          addLog("Treasury resumed — " + tx.hash.slice(0, 18) + "...", "green");
+          loadData();
+        } catch (e) { setTx("Failed: " + e.message.slice(0, 80), "error"); addLog("Resume failed: " + e.message.slice(0, 60), "red"); }
+      }
 
-    async function addContributor() {
-      const c = getWrite(); if (!c) return;
-      const addr = document.getElementById("contrib-addr").value.trim();
-      const amount = document.getElementById("contrib-amount").value.trim();
-      if (!addr || !amount) return addLog("Enter wallet address and amount", "red");
-      try {
-        setTx("Adding contributor...", "active");
-        const tx = await c.addContributor(addr, ethers.parseUnits(amount, 6));
-        await tx.wait();
-        setTx("✓ Contributor added — " + tx.hash, "success");
-        addLog("Contributor added: " + addr.slice(0, 10) + "... / " + amount + " USDC", "green");
-        document.getElementById("contrib-addr").value = "";
-        document.getElementById("contrib-amount").value = "";
-        loadData();
-      } catch (e) { setTx("Failed: " + e.message.slice(0, 80), "error"); addLog("Failed: " + e.message.slice(0, 60), "red"); }
-    }
+      async function addContributor() {
+        const c = getWrite(); if (!c) return;
+        const addr = document.getElementById("contrib-addr").value.trim();
+        const amount = document.getElementById("contrib-amount").value.trim();
+        if (!addr || !amount) return addLog("Enter wallet address and amount", "red");
+        try {
+          setTx("Adding contributor...", "active");
+          const tx = await c.addContributor(addr, ethers.parseUnits(amount, 6));
+          await tx.wait();
+          setTx("✓ Contributor added — " + tx.hash, "success");
+          addLog("Contributor added: " + addr.slice(0, 10) + "... / " + amount + " USDC", "green");
+          document.getElementById("contrib-addr").value = "";
+          document.getElementById("contrib-amount").value = "";
+          loadData();
+        } catch (e) { setTx("Failed: " + e.message.slice(0, 80), "error"); addLog("Failed: " + e.message.slice(0, 60), "red"); }
+      }
 
-    loadData();
+      loadData();
   </script>
 </body>
 
