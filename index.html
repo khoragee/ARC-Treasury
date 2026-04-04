@@ -899,7 +899,7 @@
     <div class="nav-center">
       <button class="nav-link active">Dashboard</button>
       <button class="nav-link"
-        onclick="window.open('https://testnet.arcscan.app/address/0xB1C04eCeFb0ff42b83daA94Bf5E34245aB9864cF','_blank')">Explorer</button>
+        onclick="window.open('https://testnet.arcscan.app/address/0x6340D848795eB92C4A7E99b1C7FFd428299C44D8','_blank')">Explorer</button>
       <button class="nav-link" onclick="window.open('https://faucet.circle.com','_blank')">Faucet</button>
       <button class="nav-link"
         onclick="document.querySelector('.dashboard').scrollIntoView({behavior:'smooth'})">Operate</button>
@@ -932,8 +932,8 @@
         Dashboard →</button>
     </div>
     <div class="hero-contract">
-      Contract: <a href="https://testnet.arcscan.app/address/0xB1C04eCeFb0ff42b83daA94Bf5E34245aB9864cF"
-        target="_blank">0xB1C04eCeFb0ff42b83daA94Bf5E34245aB9864cF</a>
+      Contract: <a href="https://testnet.arcscan.app/address/0x6340D848795eB92C4A7E99b1C7FFd428299C44D8"
+        target="_blank">0x6340D848795eB92C4A7E99b1C7FFd428299C44D8</a>
     </div>
   </section>
 
@@ -1049,7 +1049,7 @@
   <footer>
     <div class="footer-left">Arc Treasury · v1.0 · Solidity 0.8.24</div>
     <div class="footer-links">
-      <a class="footer-link" href="https://testnet.arcscan.app/address/0xB1C04eCeFb0ff42b83daA94Bf5E34245aB9864cF"
+      <a class="footer-link" href="https://testnet.arcscan.app/address/0x6340D848795eB92C4A7E99b1C7FFd428299C44D8"
         target="_blank">Explorer</a>
       <a class="footer-link" href="https://faucet.circle.com" target="_blank">Faucet</a>
       <a class="footer-link" href="https://github.com/khoragee" target="_blank">GitHub</a>
@@ -1058,7 +1058,7 @@
   </footer>
 
   <script>
-    const CONTRACT = "0xB1C04eCeFb0ff42b83daA94Bf5E34245aB9864cF";
+    const CONTRACT = "0x6340D848795eB92C4A7E99b1C7FFd428299C44D8";
     const RPC = "https://arc-testnet.drpc.org";
     const ABI = [
 
@@ -1099,7 +1099,7 @@
 
     async function loadData() {
       try {
-        const bal = await provider.getBalance("0xB1C04eCeFb0ff42b83daA94Bf5E34245aB9864cF");
+        const bal = await provider.getBalance("0x6340D848795eB92C4A7E99b1C7FFd428299C44D8");
         const count = await readContract.getContributorCount();
         const paused = await readContract.paused();
         const low = bal < ethers.parseEther("100");
