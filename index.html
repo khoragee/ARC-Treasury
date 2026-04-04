@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Arc Treasury</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+  <script src="https://unpkg.com/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
   <link
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&family=DM+Mono:wght@400;500&display=swap"
     rel="stylesheet" />
@@ -910,6 +911,8 @@
         Arc Testnet
       </div>
       <button id="connect-btn" onclick="connectWallet()">Connect Wallet</button>
+      <button id="wc-btn" onclick="connectWalletConnect()"
+        style="background:rgba(255,255,255,0.08);color:var(--cream);border:1px solid var(--cream-border);padding:9px 16px;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-left:6px;">WalletConnect</button>
     </div>
   </nav>
 
