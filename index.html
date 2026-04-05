@@ -218,6 +218,10 @@ footer{position:relative;z-index:1;border-top:1px solid var(--cream-border);padd
         <div class="act" onclick="resumeTreasury()"><div><div class="act-name">Resume Treasury</div><div class="act-desc">Restore normal operations</div></div><div class="act-ico">✅</div></div>
         <div class="act" onclick="loadData()"><div><div class="act-name">Refresh Data</div><div class="act-desc">Fetch latest on-chain state</div></div><div class="act-ico">🔄</div></div>
         <div class="f-div"></div>
+        <div class="f-title">Deposit to Treasury</div>
+        <input class="f-input" id="dep-amt" placeholder="Amount in USDC (e.g. 10)"/>
+        <button class="f-btn" onclick="deposit()" style="margin-bottom:8px;">⬇ Deposit USDC</button>
+        <div class="f-div"></div>
         <div class="f-title">Add Contributor</div>
         <input class="f-input" id="c-addr" placeholder="Wallet address (0x...)"/>
         <input class="f-input" id="c-amt" placeholder="Amount in USDC (e.g. 5)"/>
@@ -484,6 +488,24 @@ if (window.ethereum) {
       log("Wallet disconnected", "dim");
     }
   });
+}
+
+async function deposit() {
+  if (!needWallet()) return;
+  const amt = document.getElementById("dep-amt").value.trim();
+  if (!amt) { log("Enter deposit amount", "r"); return; }
+  try {
+    setTx("Sending " + amt + " USDC to treasury...", "act-s");
+    const tx = await signer.sendTransaction({
+      to: CONTRACT,
+      value: ethers.parseUnits(amt, 18)
+    });
+    await tx.wait();
+    setTx("✓ Deposited " + amt + " USDC — " + tx.hash, "ok");
+    log("Deposited " + amt + " USDC — " + tx.hash.slice(0,20) + "...", "g");
+    document.getElementById("dep-amt").value = "";
+    loadData();
+  } catch(e) { setTx("Error: " + e.message.slice(0,100), "err"); log("Deposit failed: " + e.message.slice(0,60), "r"); }
 }
 
 // Init
