@@ -1,1217 +1,494 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Arc Treasury</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
-  <script src="https://unpkg.com/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
-  <link
-    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&family=DM+Mono:wght@400;500&display=swap"
-    rel="stylesheet" />
-  <style>
-    :root {
-      --bg: #0a0a0a;
-      --cream: #f0ece3;
-      --cream-dim: rgba(240, 236, 227, 0.6);
-      --cream-faint: rgba(240, 236, 227, 0.12);
-      --cream-border: rgba(240, 236, 227, 0.08);
-      --green: #4ade80;
-      --red: #f87171;
-      --gold: #fbbf24;
-      --blob: #161616;
-      --blob2: #131313;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--cream);
-      font-family: 'DM Sans', sans-serif;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    /* ── BLOBS BACKGROUND ── */
-    .blob-bg {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      overflow: hidden;
-    }
-
-    .blob {
-      position: absolute;
-      border-radius: 50%;
-      background: var(--blob);
-      filter: blur(0px);
-    }
-
-    .blob-1 {
-      width: 420px;
-      height: 320px;
-      top: 5%;
-      left: 8%;
-      border-radius: 60% 40% 70% 30% / 50% 60% 40% 50%;
-      background: #111;
-    }
-
-    .blob-2 {
-      width: 300px;
-      height: 260px;
-      top: 12%;
-      right: 12%;
-      border-radius: 40% 60% 30% 70% / 60% 40% 70% 30%;
-      background: #0f0f0f;
-    }
-
-    .blob-3 {
-      width: 200px;
-      height: 200px;
-      top: 30%;
-      left: 35%;
-      border-radius: 50%;
-      background: #111;
-    }
-
-    .blob-4 {
-      width: 350px;
-      height: 280px;
-      top: 55%;
-      left: 5%;
-      border-radius: 70% 30% 50% 50% / 40% 60% 40% 60%;
-      background: #101010;
-    }
-
-    .blob-5 {
-      width: 260px;
-      height: 260px;
-      top: 60%;
-      right: 8%;
-      border-radius: 50% 50% 30% 70% / 60% 40% 60% 40%;
-      background: #0f0f0f;
-    }
-
-    .blob-6 {
-      width: 180px;
-      height: 140px;
-      top: 80%;
-      left: 45%;
-      border-radius: 40% 60% 60% 40% / 50% 50% 50% 50%;
-      background: #111;
-    }
-
-    .blob-dot-1 {
-      width: 90px;
-      height: 90px;
-      top: 18%;
-      right: 28%;
-      border-radius: 50%;
-      background: #141414;
-    }
-
-    .blob-dot-2 {
-      width: 60px;
-      height: 60px;
-      top: 45%;
-      left: 22%;
-      border-radius: 50%;
-      background: #131313;
-    }
-
-    .blob-dot-3 {
-      width: 110px;
-      height: 90px;
-      top: 70%;
-      right: 32%;
-      border-radius: 50%;
-      background: #121212;
-    }
-
-    /* ── NAV ── */
-    nav {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-      padding: 20px 48px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    nav::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: rgba(10, 10, 10, 0.7);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--cream-border);
-    }
-
-    .nav-logo {
-      position: relative;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--cream);
-      letter-spacing: -0.3px;
-      z-index: 1;
-    }
-
-    .nav-logo-mark {
-      width: 28px;
-      height: 28px;
-      background: var(--cream);
-      border-radius: 7px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      color: #000;
-    }
-
-    .nav-center {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--cream-border);
-      border-radius: 100px;
-      padding: 4px;
-      gap: 2px;
-    }
-
-    .nav-link {
-      background: none;
-      border: none;
-      color: var(--cream-dim);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 13px;
-      font-weight: 500;
-      padding: 7px 18px;
-      border-radius: 100px;
-      cursor: pointer;
-      transition: all 0.2s;
-      letter-spacing: 0.2px;
-    }
-
-    .nav-link:hover {
-      color: var(--cream);
-      background: rgba(255, 255, 255, 0.06);
-    }
-
-    .nav-link.active {
-      color: var(--bg);
-      background: var(--cream);
-    }
-
-    .nav-right {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .net-badge {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      color: var(--cream-dim);
-      font-family: 'DM Mono', monospace;
-    }
-
-    .net-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--green);
-      box-shadow: 0 0 6px var(--green);
-      animation: glow 2s infinite;
-    }
-
-    @keyframes glow {
-
-      0%,
-      100% {
-        opacity: 1
-      }
-
-      50% {
-        opacity: 0.4
-      }
-    }
-
-    #connect-btn {
-      background: var(--cream);
-      color: var(--bg);
-      border: none;
-      padding: 9px 22px;
-      border-radius: 100px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      letter-spacing: 0.2px;
-    }
-
-    #connect-btn:hover {
-      background: #fff;
-      transform: translateY(-1px);
-    }
-
-    #connect-btn.connected {
-      background: rgba(74, 222, 128, 0.15);
-      color: var(--green);
-      border: 1px solid rgba(74, 222, 128, 0.3);
-    }
-
-    /* ── HERO ── */
-    .hero {
-      position: relative;
-      z-index: 1;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 120px 48px 80px;
-    }
-
-    .hero-eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--cream-faint);
-      border: 1px solid var(--cream-border);
-      border-radius: 100px;
-      padding: 6px 16px;
-      font-size: 12px;
-      color: var(--cream-dim);
-      font-family: 'DM Mono', monospace;
-      margin-bottom: 32px;
-      letter-spacing: 0.5px;
-    }
-
-    .hero-eyebrow-dot {
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      background: var(--green);
-    }
-
-    .hero-title {
-      font-size: clamp(48px, 8vw, 88px);
-      font-weight: 300;
-      color: var(--cream);
-      line-height: 1.05;
-      letter-spacing: -3px;
-      margin-bottom: 24px;
-    }
-
-    .hero-title strong {
-      font-weight: 600;
-      letter-spacing: -3px;
-    }
-
-    .hero-sub {
-      font-size: 18px;
-      color: var(--cream-dim);
-      font-weight: 400;
-      max-width: 520px;
-      line-height: 1.6;
-      margin-bottom: 48px;
-      letter-spacing: -0.2px;
-    }
-
-    .hero-cta {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .btn-primary {
-      background: var(--cream);
-      color: var(--bg);
-      border: none;
-      padding: 14px 32px;
-      border-radius: 100px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .btn-primary:hover {
-      background: #fff;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(240, 236, 227, 0.15);
-    }
-
-    .btn-ghost {
-      background: none;
-      color: var(--cream-dim);
-      border: 1px solid var(--cream-border);
-      padding: 14px 32px;
-      border-radius: 100px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 15px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .btn-ghost:hover {
-      color: var(--cream);
-      border-color: rgba(240, 236, 227, 0.2);
-    }
-
-    .hero-contract {
-      margin-top: 48px;
-      font-size: 12px;
-      font-family: 'DM Mono', monospace;
-      color: rgba(240, 236, 227, 0.25);
-      letter-spacing: 0.5px;
-    }
-
-    .hero-contract a {
-      color: rgba(240, 236, 227, 0.4);
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-
-    .hero-contract a:hover {
-      color: var(--cream-dim);
-    }
-
-    /* ── STATS BAND ── */
-    .stats-band {
-      position: relative;
-      z-index: 1;
-      border-top: 1px solid var(--cream-border);
-      border-bottom: 1px solid var(--cream-border);
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      background: rgba(255, 255, 255, 0.02);
-      backdrop-filter: blur(10px);
-    }
-
-    .stat-cell {
-      padding: 36px 40px;
-      border-right: 1px solid var(--cream-border);
-      transition: background 0.3s;
-    }
-
-    .stat-cell:last-child {
-      border-right: none;
-    }
-
-    .stat-cell:hover {
-      background: rgba(255, 255, 255, 0.03);
-    }
-
-    .stat-label {
-      font-size: 11px;
-      font-family: 'DM Mono', monospace;
-      color: rgba(240, 236, 227, 0.3);
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 12px;
-    }
-
-    .stat-val {
-      font-size: 40px;
-      font-weight: 300;
-      color: var(--cream);
-      letter-spacing: -2px;
-      line-height: 1;
-      margin-bottom: 6px;
-    }
-
-    .stat-unit {
-      font-size: 13px;
-      color: rgba(240, 236, 227, 0.35);
-      font-family: 'DM Mono', monospace;
-    }
-
-    .stat-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 12px;
-      font-weight: 500;
-      padding: 4px 12px;
-      border-radius: 100px;
-      margin-top: 8px;
-      font-family: 'DM Mono', monospace;
-    }
-
-    .chip-green {
-      background: rgba(74, 222, 128, 0.1);
-      color: var(--green);
-      border: 1px solid rgba(74, 222, 128, 0.2);
-    }
-
-    .chip-red {
-      background: rgba(248, 113, 113, 0.1);
-      color: var(--red);
-      border: 1px solid rgba(248, 113, 113, 0.2);
-    }
-
-    .chip-gold {
-      background: rgba(251, 191, 36, 0.1);
-      color: var(--gold);
-      border: 1px solid rgba(251, 191, 36, 0.2);
-    }
-
-    /* ── DASHBOARD SECTION ── */
-    .dashboard {
-      position: relative;
-      z-index: 1;
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 80px 48px;
-    }
-
-    .section-label {
-      font-size: 11px;
-      font-family: 'DM Mono', monospace;
-      color: rgba(240, 236, 227, 0.3);
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      margin-bottom: 40px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .section-label::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--cream-border);
-    }
-
-    .dash-grid {
-      display: grid;
-      grid-template-columns: 1fr 380px;
-      gap: 16px;
-    }
-
-    /* PANEL */
-    .panel {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--cream-border);
-      border-radius: 20px;
-      overflow: hidden;
-      backdrop-filter: blur(10px);
-      transition: border-color 0.3s;
-    }
-
-    .panel:hover {
-      border-color: rgba(240, 236, 227, 0.12);
-    }
-
-    .panel-head {
-      padding: 20px 24px;
-      border-bottom: 1px solid var(--cream-border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .panel-title {
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--cream);
-      letter-spacing: -0.2px;
-    }
-
-    .panel-sub {
-      font-size: 11px;
-      font-family: 'DM Mono', monospace;
-      color: rgba(240, 236, 227, 0.25);
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--cream-border);
-      padding: 3px 10px;
-      border-radius: 100px;
-    }
-
-    .panel-body {
-      padding: 24px;
-    }
-
-    /* ACTION ROWS */
-    .action-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 18px;
-      border-radius: 12px;
-      border: 1px solid var(--cream-border);
-      margin-bottom: 8px;
-      cursor: pointer;
-      background: rgba(255, 255, 255, 0.02);
-      transition: all 0.2s;
-    }
-
-    .action-row:hover {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: rgba(240, 236, 227, 0.15);
-      transform: translateX(4px);
-    }
-
-    .action-row:last-of-type {
-      margin-bottom: 0;
-    }
-
-    .action-info {}
-
-    .action-name {
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--cream);
-      margin-bottom: 3px;
-    }
-
-    .action-desc {
-      font-size: 12px;
-      color: rgba(240, 236, 227, 0.35);
-      font-family: 'DM Mono', monospace;
-    }
-
-    .action-icon {
-      width: 34px;
-      height: 34px;
-      border-radius: 9px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 15px;
-      flex-shrink: 0;
-      border: 1px solid var(--cream-border);
-      background: rgba(255, 255, 255, 0.04);
-      transition: all 0.2s;
-    }
-
-    .action-row:hover .action-icon {
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    /* FORM */
-    .form-divider {
-      height: 1px;
-      background: var(--cream-border);
-      margin: 20px 0;
-    }
-
-    .form-title {
-      font-size: 11px;
-      font-family: 'DM Mono', monospace;
-      color: rgba(240, 236, 227, 0.3);
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 14px;
-    }
-
-    .form-input {
-      width: 100%;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--cream-border);
-      border-radius: 10px;
-      padding: 11px 16px;
-      font-family: 'DM Mono', monospace;
-      font-size: 12px;
-      color: var(--cream);
-      margin-bottom: 8px;
-      outline: none;
-      transition: border-color 0.2s, background 0.2s;
-    }
-
-    .form-input:focus {
-      border-color: rgba(240, 236, 227, 0.2);
-      background: rgba(255, 255, 255, 0.06);
-    }
-
-    .form-input::placeholder {
-      color: rgba(240, 236, 227, 0.2);
-    }
-
-    .form-submit {
-      width: 100%;
-      background: var(--cream);
-      color: var(--bg);
-      border: none;
-      border-radius: 10px;
-      padding: 12px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .form-submit:hover {
-      background: #fff;
-      transform: translateY(-1px);
-    }
-
-    /* STATUS */
-    .status-bar {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--cream-border);
-      border-radius: 10px;
-      padding: 12px 16px;
-      font-size: 12px;
-      font-family: 'DM Mono', monospace;
-      color: rgba(240, 236, 227, 0.3);
-      margin-top: 16px;
-      min-height: 46px;
-      word-break: break-all;
-      line-height: 1.6;
-    }
-
-    .status-bar.active {
-      border-color: rgba(59, 130, 246, 0.4);
-      color: #60a5fa;
-      background: rgba(59, 130, 246, 0.05);
-    }
-
-    .status-bar.success {
-      border-color: rgba(74, 222, 128, 0.4);
-      color: var(--green);
-      background: rgba(74, 222, 128, 0.05);
-    }
-
-    .status-bar.error {
-      border-color: rgba(248, 113, 113, 0.4);
-      color: var(--red);
-      background: rgba(248, 113, 113, 0.05);
-    }
-
-    .spinner {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      border: 1.5px solid rgba(96, 165, 250, 0.3);
-      border-top-color: #60a5fa;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      margin-right: 7px;
-      vertical-align: middle;
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-
-    /* LOG */
-    .log-item {
-      display: flex;
-      gap: 12px;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--cream-border);
-      animation: fadeUp 0.3s ease;
-    }
-
-    @keyframes fadeUp {
-      from {
-        opacity: 0;
-        transform: translateY(-5px)
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0)
-      }
-    }
-
-    .log-item:last-child {
-      border-bottom: none;
-    }
-
-    .log-pip {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      margin-top: 6px;
-      flex-shrink: 0;
-    }
-
-    .pip-green {
-      background: var(--green);
-      box-shadow: 0 0 5px var(--green);
-    }
-
-    .pip-red {
-      background: var(--red);
-    }
-
-    .pip-gold {
-      background: var(--gold);
-    }
-
-    .pip-blue {
-      background: #60a5fa;
-    }
-
-    .pip-dim {
-      background: rgba(240, 236, 227, 0.15);
-    }
-
-    .log-content {
-      flex: 1;
-    }
-
-    .log-msg {
-      font-size: 12px;
-      font-family: 'DM Mono', monospace;
-      color: rgba(240, 236, 227, 0.6);
-      line-height: 1.5;
-    }
-
-    .log-time {
-      font-size: 10px;
-      color: rgba(240, 236, 227, 0.2);
-      margin-top: 2px;
-      font-family: 'DM Mono', monospace;
-    }
-
-    /* FOOTER */
-    footer {
-      position: relative;
-      z-index: 1;
-      border-top: 1px solid var(--cream-border);
-      padding: 32px 48px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .footer-left {
-      font-size: 13px;
-      color: rgba(240, 236, 227, 0.25);
-      font-family: 'DM Mono', monospace;
-    }
-
-    .footer-links {
-      display: flex;
-      gap: 24px;
-    }
-
-    .footer-link {
-      font-size: 13px;
-      color: rgba(240, 236, 227, 0.3);
-      text-decoration: none;
-      transition: color 0.2s;
-      cursor: pointer;
-      background: none;
-      border: none;
-      font-family: 'DM Sans', sans-serif;
-    }
-
-    .footer-link:hover {
-      color: var(--cream-dim);
-    }
-
-    @media (max-width: 900px) {
-      .stats-band {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .dash-grid {
-        grid-template-columns: 1fr;
-      }
-
-      nav {
-        padding: 16px 20px;
-      }
-
-      .nav-center {
-        display: none;
-      }
-
-      .hero {
-        padding: 100px 20px 60px;
-      }
-
-      .dashboard {
-        padding: 60px 20px;
-      }
-
-      .hero-title {
-        letter-spacing: -2px;
-      }
-
-      footer {
-        flex-direction: column;
-        gap: 16px;
-        text-align: center;
-        padding: 24px 20px;
-      }
-    }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Arc Treasury — AI Agent Manager</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0a0a0a;
+  --cream: #f0ece3;
+  --cream-dim: rgba(240,236,227,0.55);
+  --cream-faint: rgba(240,236,227,0.07);
+  --cream-border: rgba(240,236,227,0.09);
+  --green: #4ade80;
+  --green-bg: rgba(74,222,128,0.08);
+  --green-border: rgba(74,222,128,0.25);
+  --red: #f87171;
+  --red-bg: rgba(248,113,113,0.08);
+  --red-border: rgba(248,113,113,0.25);
+  --gold: #fbbf24;
+  --blue: #60a5fa;
+  --blue-bg: rgba(96,165,250,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--cream);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+
+/* BLOBS */
+.blobs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+.blob{position:absolute;background:#111;border-radius:50%;}
+.b1{width:500px;height:380px;top:2%;left:5%;border-radius:60% 40% 70% 30%/50% 60% 40% 50%;}
+.b2{width:320px;height:280px;top:10%;right:8%;border-radius:40% 60% 30% 70%/60% 40% 70% 30%;background:#0f0f0f;}
+.b3{width:220px;height:220px;top:32%;left:38%;border-radius:50%;background:#111;}
+.b4{width:380px;height:300px;top:58%;left:3%;border-radius:70% 30% 50% 50%/40% 60% 40% 60%;background:#101010;}
+.b5{width:280px;height:280px;top:62%;right:6%;border-radius:50% 50% 30% 70%/60% 40% 60% 40%;background:#0f0f0f;}
+.b6{width:100px;height:100px;top:20%;right:30%;border-radius:50%;background:#141414;}
+.b7{width:70px;height:70px;top:48%;left:20%;border-radius:50%;background:#131313;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 48px;display:flex;align-items:center;justify-content:space-between;}
+nav::before{content:'';position:absolute;inset:0;background:rgba(10,10,10,0.75);backdrop-filter:blur(24px);border-bottom:1px solid var(--cream-border);}
+.nav-logo{position:relative;z-index:1;display:flex;align-items:center;gap:10px;font-size:16px;font-weight:600;color:var(--cream);}
+.nav-mark{width:30px;height:30px;background:var(--cream);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#000;}
+.nav-center{position:relative;z-index:1;display:flex;background:rgba(255,255,255,0.04);border:1px solid var(--cream-border);border-radius:100px;padding:4px;gap:2px;}
+.nav-link{background:none;border:none;color:var(--cream-dim);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:7px 18px;border-radius:100px;cursor:pointer;transition:all 0.2s;}
+.nav-link:hover{color:var(--cream);background:rgba(255,255,255,0.06);}
+.nav-link.active{color:#000;background:var(--cream);}
+.nav-right{position:relative;z-index:1;display:flex;align-items:center;gap:10px;}
+.net-pill{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--cream-dim);font-family:'DM Mono',monospace;}
+.net-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:glow 2s infinite;}
+@keyframes glow{0%,100%{opacity:1}50%{opacity:0.35}}
+#connect-btn{background:var(--cream);color:#000;border:none;padding:9px 22px;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+#connect-btn:hover{background:#fff;transform:translateY(-1px);}
+#connect-btn.connected{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+
+/* HERO */
+.hero{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 48px 80px;}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--cream-faint);border:1px solid var(--cream-border);border-radius:100px;padding:6px 16px;font-size:12px;color:var(--cream-dim);font-family:'DM Mono',monospace;margin-bottom:28px;letter-spacing:0.5px;}
+.eyebrow-dot{width:5px;height:5px;border-radius:50%;background:var(--green);}
+.hero-title{font-size:clamp(44px,8vw,86px);font-weight:300;color:var(--cream);line-height:1.05;letter-spacing:-3px;margin-bottom:20px;}
+.hero-title strong{font-weight:600;}
+.hero-sub{font-size:17px;color:var(--cream-dim);max-width:500px;line-height:1.65;margin-bottom:44px;letter-spacing:-0.1px;}
+.hero-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:48px;}
+.btn-p{background:var(--cream);color:#000;border:none;padding:14px 32px;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.btn-p:hover{background:#fff;transform:translateY(-2px);box-shadow:0 8px 24px rgba(240,236,227,0.12);}
+.btn-g{background:none;color:var(--cream-dim);border:1px solid var(--cream-border);padding:14px 32px;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:all 0.2s;}
+.btn-g:hover{color:var(--cream);border-color:rgba(240,236,227,0.2);}
+.hero-addr{font-size:12px;font-family:'DM Mono',monospace;color:rgba(240,236,227,0.2);}
+.hero-addr a{color:rgba(240,236,227,0.35);text-decoration:none;transition:color 0.2s;}
+.hero-addr a:hover{color:var(--cream-dim);}
+
+/* STATS */
+.stats{position:relative;z-index:1;border-top:1px solid var(--cream-border);border-bottom:1px solid var(--cream-border);display:grid;grid-template-columns:repeat(4,1fr);background:rgba(255,255,255,0.015);}
+.stat{padding:32px 36px;border-right:1px solid var(--cream-border);transition:background 0.3s;}
+.stat:last-child{border-right:none;}
+.stat:hover{background:rgba(255,255,255,0.025);}
+.stat-lbl{font-size:10px;font-family:'DM Mono',monospace;color:rgba(240,236,227,0.28);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;}
+.stat-val{font-size:38px;font-weight:300;color:var(--cream);letter-spacing:-2px;line-height:1;margin-bottom:6px;}
+.stat-unit{font-size:12px;color:rgba(240,236,227,0.3);font-family:'DM Mono',monospace;}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;padding:4px 12px;border-radius:100px;margin-top:10px;font-family:'DM Mono',monospace;}
+.chip-g{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+.chip-r{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);}
+.chip-gold{background:rgba(251,191,36,0.08);color:var(--gold);border:1px solid rgba(251,191,36,0.2);}
+
+/* DASHBOARD */
+.dash{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:80px 48px;}
+.sec-label{font-size:11px;font-family:'DM Mono',monospace;color:rgba(240,236,227,0.25);text-transform:uppercase;letter-spacing:2px;margin-bottom:36px;display:flex;align-items:center;gap:12px;}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--cream-border);}
+.dash-grid{display:grid;grid-template-columns:1fr 370px;gap:16px;}
+
+/* PANEL */
+.panel{background:rgba(255,255,255,0.025);border:1px solid var(--cream-border);border-radius:20px;overflow:hidden;transition:border-color 0.3s;}
+.panel:hover{border-color:rgba(240,236,227,0.13);}
+.panel-head{padding:18px 22px;border-bottom:1px solid var(--cream-border);display:flex;justify-content:space-between;align-items:center;}
+.panel-title{font-size:14px;font-weight:500;color:var(--cream);}
+.panel-tag{font-size:10px;font-family:'DM Mono',monospace;color:rgba(240,236,227,0.22);background:rgba(255,255,255,0.04);border:1px solid var(--cream-border);padding:3px 10px;border-radius:100px;}
+.panel-body{padding:22px;}
+
+/* ACTION ROWS */
+.act{display:flex;align-items:center;justify-content:space-between;padding:15px 17px;border-radius:12px;border:1px solid var(--cream-border);margin-bottom:8px;cursor:pointer;background:rgba(255,255,255,0.02);transition:all 0.2s;}
+.act:hover{background:rgba(255,255,255,0.05);border-color:rgba(240,236,227,0.16);transform:translateX(3px);}
+.act:last-of-type{margin-bottom:0;}
+.act-name{font-size:14px;font-weight:500;color:var(--cream);margin-bottom:3px;}
+.act-desc{font-size:11px;color:rgba(240,236,227,0.3);font-family:'DM Mono',monospace;}
+.act-ico{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;border:1px solid var(--cream-border);background:rgba(255,255,255,0.04);}
+
+/* FORM */
+.f-div{height:1px;background:var(--cream-border);margin:18px 0;}
+.f-title{font-size:10px;font-family:'DM Mono',monospace;color:rgba(240,236,227,0.28);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;}
+.f-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--cream-border);border-radius:10px;padding:11px 14px;font-family:'DM Mono',monospace;font-size:12px;color:var(--cream);margin-bottom:8px;outline:none;transition:border-color 0.2s,background 0.2s;}
+.f-input:focus{border-color:rgba(240,236,227,0.2);background:rgba(255,255,255,0.06);}
+.f-input::placeholder{color:rgba(240,236,227,0.18);}
+.f-btn{width:100%;background:var(--cream);color:#000;border:none;border-radius:10px;padding:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.f-btn:hover{background:#fff;transform:translateY(-1px);}
+
+/* STATUS */
+.status{background:rgba(255,255,255,0.025);border:1px solid var(--cream-border);border-radius:10px;padding:12px 15px;font-size:12px;font-family:'DM Mono',monospace;margin-top:14px;min-height:46px;word-break:break-all;line-height:1.6;color:rgba(240,236,227,0.28);}
+.status.act-s{border-color:rgba(96,165,250,0.4);color:var(--blue);background:var(--blue-bg);}
+.status.ok{border-color:var(--green-border);color:var(--green);background:var(--green-bg);}
+.status.err{border-color:var(--red-border);color:var(--red);background:var(--red-bg);}
+
+/* LOG */
+.log-item{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--cream-border);animation:fadeUp 0.25s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.log-item:last-child{border-bottom:none;}
+.log-pip{width:7px;height:7px;border-radius:50%;margin-top:5px;flex-shrink:0;}
+.pip-g{background:var(--green);box-shadow:0 0 5px var(--green);}
+.pip-r{background:var(--red);}
+.pip-b{background:var(--blue);}
+.pip-gold{background:var(--gold);}
+.pip-dim{background:rgba(240,236,227,0.15);}
+.log-txt{font-size:12px;font-family:'DM Mono',monospace;color:rgba(240,236,227,0.55);line-height:1.5;}
+.log-time{font-size:10px;color:rgba(240,236,227,0.18);margin-top:2px;font-family:'DM Mono',monospace;}
+
+/* SPINNER */
+.spin{display:inline-block;width:10px;height:10px;border:1.5px solid rgba(96,165,250,0.25);border-top-color:var(--blue);border-radius:50%;animation:s 0.6s linear infinite;margin-right:7px;vertical-align:middle;}
+@keyframes s{to{transform:rotate(360deg)}}
+
+/* FOOTER */
+footer{position:relative;z-index:1;border-top:1px solid var(--cream-border);padding:28px 48px;display:flex;justify-content:space-between;align-items:center;}
+.footer-l{font-size:12px;color:rgba(240,236,227,0.22);font-family:'DM Mono',monospace;}
+.footer-links{display:flex;gap:22px;}
+.fl{font-size:13px;color:rgba(240,236,227,0.28);text-decoration:none;transition:color 0.2s;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.fl:hover{color:var(--cream-dim);}
+
+/* NETWORK SWITCH BANNER */
+.net-banner{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a0a00;border:1px solid rgba(251,191,36,0.4);color:var(--gold);font-size:13px;font-family:'DM Mono',monospace;padding:10px 20px;border-radius:100px;z-index:200;display:none;gap:10px;align-items:center;}
+.net-banner.show{display:flex;}
+.net-banner button{background:var(--gold);color:#000;border:none;padding:4px 12px;border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+
+@media(max-width:900px){
+  .stats{grid-template-columns:1fr 1fr;}
+  .dash-grid{grid-template-columns:1fr;}
+  nav{padding:14px 20px;}
+  .nav-center{display:none;}
+  .hero{padding:100px 20px 60px;}
+  .dash{padding:60px 20px;}
+  footer{flex-direction:column;gap:14px;text-align:center;padding:24px 20px;}
+}
+</style>
 </head>
-
 <body>
 
-  <!-- BLOB BG -->
-  <div class="blob-bg">
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-    <div class="blob blob-3"></div>
-    <div class="blob blob-4"></div>
-    <div class="blob blob-5"></div>
-    <div class="blob blob-6"></div>
-    <div class="blob blob-dot-1"></div>
-    <div class="blob blob-dot-2"></div>
-    <div class="blob blob-dot-3"></div>
+<div class="blobs">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  <div class="blob b4"></div><div class="blob b5"></div><div class="blob b6"></div><div class="blob b7"></div>
+</div>
+
+<div class="net-banner" id="net-banner">
+  ⚠ Switch MetaMask to Arc Testnet
+  <button onclick="addArcNetwork()">Switch Now</button>
+</div>
+
+<nav>
+  <div class="nav-logo"><div class="nav-mark">⚡</div>Arc Treasury</div>
+  <div class="nav-center">
+    <button class="nav-link active">Dashboard</button>
+    <button class="nav-link" onclick="window.open('https://testnet.arcscan.app/address/0x6340D848795eB92C4A7E99b1C7FFd428299C44D8','_blank')">Explorer</button>
+    <button class="nav-link" onclick="window.open('https://faucet.circle.com','_blank')">Faucet</button>
+    <button class="nav-link" onclick="document.querySelector('.dash').scrollIntoView({behavior:'smooth'})">Operate</button>
   </div>
-
-  <!-- NAV -->
-  <nav>
-    <div class="nav-logo">
-      <div class="nav-logo-mark">⚡</div>
-      Arc Treasury
-    </div>
-    <div class="nav-center">
-      <button class="nav-link active">Dashboard</button>
-      <button class="nav-link"
-        onclick="window.open('https://testnet.arcscan.app/address/0x6340D848795eB92C4A7E99b1C7FFd428299C44D8','_blank')">Explorer</button>
-      <button class="nav-link" onclick="window.open('https://faucet.circle.com','_blank')">Faucet</button>
-      <button class="nav-link"
-        onclick="document.querySelector('.dashboard').scrollIntoView({behavior:'smooth'})">Operate</button>
-    </div>
-    <div class="nav-right">
-      <div class="net-badge">
-        <div class="net-dot"></div>
-        Arc Testnet
-      </div>
-      <button id="connect-btn" onclick="connectWallet()">Connect Wallet</button>
-      <button id="wc-btn" onclick="connectWalletConnect()"
-        style="background:rgba(255,255,255,0.08);color:var(--cream);border:1px solid var(--cream-border);padding:9px 16px;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-left:6px;">WalletConnect</button>
-    </div>
-  </nav>
-
-  <!-- HERO -->
-  <section class="hero">
-    <div class="hero-eyebrow">
-      <div class="hero-eyebrow-dot"></div>
-      Deployed on Arc Testnet · Chain 5042002
-    </div>
-    <h1 class="hero-title">
-      The AI Agent<br><strong>Treasury Manager.</strong>
-    </h1>
-    <p class="hero-sub">
-      Autonomous USDC treasury management on Arc. Scheduled payouts, price-triggered pauses, and real-time balance
-      monitoring — no human signing required.
-    </p>
-    <div class="hero-cta">
-      <button class="btn-primary" onclick="connectWallet()">Connect Wallet</button>
-      <button class="btn-ghost" onclick="document.querySelector('.dashboard').scrollIntoView({behavior:'smooth'})">Open
-        Dashboard →</button>
-    </div>
-    <div class="hero-contract">
-      Contract: <a href="https://testnet.arcscan.app/address/0x6340D848795eB92C4A7E99b1C7FFd428299C44D8"
-        target="_blank">0x6340D848795eB92C4A7E99b1C7FFd428299C44D8</a>
-    </div>
-  </section>
-
-  <!-- STATS BAND -->
-  <div class="stats-band">
-    <div class="stat-cell">
-      <div class="stat-label">Treasury Balance</div>
-      <div class="stat-val" id="balance">—</div>
-      <div class="stat-unit">USDC</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-label">Contributors</div>
-      <div class="stat-val" id="contributors">—</div>
-      <div class="stat-unit">active wallets</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-label">Balance Alert</div>
-      <div id="lowBalanceVal" style="margin-top:12px">—</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-label">Treasury Status</div>
-      <div id="pausedVal" style="margin-top:12px">—</div>
-    </div>
+  <div class="nav-right">
+    <div class="net-pill"><div class="net-dot"></div>Arc Testnet</div>
+    <button id="connect-btn" onclick="connectWallet()">Connect Wallet</button>
   </div>
+</nav>
 
-  <!-- DASHBOARD -->
-  <div class="dashboard">
-    <div class="section-label">Operations Panel</div>
-
-    <div class="dash-grid">
-
-      <!-- LEFT -->
-      <div class="panel">
-        <div class="panel-head">
-          <span class="panel-title">Treasury Operations</span>
-          <span class="panel-sub">owner only</span>
-        </div>
-        <div class="panel-body">
-
-          <div class="action-row" onclick="manualPayout()">
-            <div class="action-info">
-              <div class="action-name">Manual Payout</div>
-              <div class="action-desc">Immediately pay all active contributors</div>
-            </div>
-            <div class="action-icon">💸</div>
-          </div>
-
-          <div class="action-row" onclick="scheduledPayout()">
-            <div class="action-info">
-              <div class="action-name">Scheduled Payout</div>
-              <div class="action-desc">Execute if 7-day interval has elapsed</div>
-            </div>
-            <div class="action-icon">⏰</div>
-          </div>
-
-          <div class="action-row" onclick="pauseTreasury()">
-            <div class="action-info">
-              <div class="action-name">Pause Treasury</div>
-              <div class="action-desc">Halt all outflows immediately</div>
-            </div>
-            <div class="action-icon">⛔</div>
-          </div>
-
-          <div class="action-row" onclick="resumeTreasury()">
-            <div class="action-info">
-              <div class="action-name">Resume Treasury</div>
-              <div class="action-desc">Restore normal operations</div>
-            </div>
-            <div class="action-icon">✅</div>
-          </div>
-
-          <div class="action-row" onclick="loadData()">
-            <div class="action-info">
-              <div class="action-name">Refresh Data</div>
-              <div class="action-desc">Fetch latest on-chain state</div>
-            </div>
-            <div class="action-icon">🔄</div>
-          </div>
-
-          <div class="form-divider"></div>
-          <div class="form-title">Add Contributor</div>
-          <input class="form-input" id="contrib-addr" placeholder="Wallet address (0x...)" />
-          <input class="form-input" id="contrib-amount" placeholder="Amount in USDC (e.g. 100)" />
-          <button class="form-submit" onclick="addContributor()">Add Contributor</button>
-
-          <div class="status-bar" id="tx-display">Awaiting action...</div>
-        </div>
-      </div>
-
-      <!-- RIGHT: LOG -->
-      <div class="panel">
-        <div class="panel-head">
-          <span class="panel-title">Activity Log</span>
-          <span class="panel-sub" id="log-count">0 events</span>
-        </div>
-        <div class="panel-body" style="max-height:620px;overflow-y:auto;">
-          <div id="log-list">
-            <div class="log-item">
-              <div class="log-pip pip-dim"></div>
-              <div class="log-content">
-                <div class="log-msg">Dashboard initialized</div>
-                <div class="log-time" id="init-time"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
+<section class="hero">
+  <div class="eyebrow"><div class="eyebrow-dot"></div>Live on Arc Testnet · Chain 5042002</div>
+  <h1 class="hero-title">The AI Agent<br><strong>Treasury Manager.</strong></h1>
+  <p class="hero-sub">Autonomous USDC treasury management on Arc. Scheduled payouts, price-triggered pauses, and real-time balance monitoring — no human signing required.</p>
+  <div class="hero-btns">
+    <button class="btn-p" onclick="connectWallet()">Connect Wallet</button>
+    <button class="btn-g" onclick="document.querySelector('.dash').scrollIntoView({behavior:'smooth'})">Open Dashboard →</button>
   </div>
+  <div class="hero-addr">Contract: <a href="https://testnet.arcscan.app/address/0x6340D848795eB92C4A7E99b1C7FFd428299C44D8" target="_blank">0x6340D848795eB92C4A7E99b1C7FFd428299C44D8</a></div>
+</section>
 
-  <!-- FOOTER -->
-  <footer>
-    <div class="footer-left">Arc Treasury · v1.0 · Solidity 0.8.24</div>
-    <div class="footer-links">
-      <a class="footer-link" href="https://testnet.arcscan.app/address/0x6340D848795eB92C4A7E99b1C7FFd428299C44D8"
-        target="_blank">Explorer</a>
-      <a class="footer-link" href="https://faucet.circle.com" target="_blank">Faucet</a>
-      <a class="footer-link" href="https://github.com/khoragee" target="_blank">GitHub</a>
-      <a class="footer-link" href="https://arc.network" target="_blank">Arc Network</a>
+<div class="stats">
+  <div class="stat"><div class="stat-lbl">Treasury Balance</div><div class="stat-val" id="balance">—</div><div class="stat-unit">USDC</div></div>
+  <div class="stat"><div class="stat-lbl">Contributors</div><div class="stat-val" id="contributors">—</div><div class="stat-unit">active wallets</div></div>
+  <div class="stat"><div class="stat-lbl">Balance Alert</div><div id="lowBal" style="margin-top:12px">—</div></div>
+  <div class="stat"><div class="stat-lbl">Treasury Status</div><div id="status" style="margin-top:12px">—</div></div>
+</div>
+
+<div class="dash">
+  <div class="sec-label">Operations Panel</div>
+  <div class="dash-grid">
+
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">Treasury Operations</span><span class="panel-tag">owner only</span></div>
+      <div class="panel-body">
+        <div class="act" onclick="manualPayout()"><div><div class="act-name">Manual Payout</div><div class="act-desc">Immediately pay all active contributors</div></div><div class="act-ico">💸</div></div>
+        <div class="act" onclick="scheduledPayout()"><div><div class="act-name">Scheduled Payout</div><div class="act-desc">Execute if 7-day interval has elapsed</div></div><div class="act-ico">⏰</div></div>
+        <div class="act" onclick="pauseTreasury()"><div><div class="act-name">Pause Treasury</div><div class="act-desc">Halt all outflows immediately</div></div><div class="act-ico">⛔</div></div>
+        <div class="act" onclick="resumeTreasury()"><div><div class="act-name">Resume Treasury</div><div class="act-desc">Restore normal operations</div></div><div class="act-ico">✅</div></div>
+        <div class="act" onclick="loadData()"><div><div class="act-name">Refresh Data</div><div class="act-desc">Fetch latest on-chain state</div></div><div class="act-ico">🔄</div></div>
+        <div class="f-div"></div>
+        <div class="f-title">Add Contributor</div>
+        <input class="f-input" id="c-addr" placeholder="Wallet address (0x...)"/>
+        <input class="f-input" id="c-amt" placeholder="Amount in USDC (e.g. 5)"/>
+        <button class="f-btn" onclick="addContributor()">+ Add Contributor</button>
+        <div class="status" id="tx">Connect wallet to get started</div>
+      </div>
     </div>
-  </footer>
 
-  <script>
-    const CONTRACT = "0x6340D848795eB92C4A7E99b1C7FFd428299C44D8";
-    const RPC = "https://arc-testnet.drpc.org";
-    const ABI = [
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">Activity Log</span><span class="panel-tag" id="log-count">0 events</span></div>
+      <div class="panel-body" style="max-height:620px;overflow-y:auto;" id="log-list">
+        <div class="log-item"><div class="log-pip pip-dim"></div><div><div class="log-txt">Dashboard initialized</div><div class="log-time" id="init-time"></div></div></div>
+      </div>
+    </div>
 
-      "function checkLowBalance() view returns (bool)",
-      "function getContributorCount() view returns (uint256)",
-      "function paused() view returns (bool)",
-      "function executeScheduledPayout() external",
-      "function manualPayout() external",
-      "function addContributor(address wallet, uint256 amount) external",
-      "function triggerPricePause(string reason) external",
-      "function resume() external"
-    ];
+  </div>
+</div>
 
-    const provider = new ethers.JsonRpcProvider(RPC);
-    const readContract = new ethers.Contract(CONTRACT, ABI, provider);
-    let signer = null, logCount = 0;
+<footer>
+  <div class="footer-l">Arc Treasury · v1.0 · Solidity 0.8.24 · Chain 5042002</div>
+  <div class="footer-links">
+    <a class="fl" href="https://testnet.arcscan.app/address/0x6340D848795eB92C4A7E99b1C7FFd428299C44D8" target="_blank">Explorer</a>
+    <a class="fl" href="https://faucet.circle.com" target="_blank">Faucet</a>
+    <a class="fl" href="https://github.com/khoragee/ARC-Treasury" target="_blank">GitHub</a>
+    <a class="fl" href="https://arc.network" target="_blank">Arc Network</a>
+  </div>
+</footer>
 
-    document.getElementById("init-time").innerText = new Date().toLocaleTimeString();
+<script>
+const CONTRACT = "0x6340D848795eB92C4A7E99b1C7FFd428299C44D8";
+const ARC_CHAIN_ID = 5042002;
+const ARC_CHAIN_HEX = "0x4CEFF2";
+const RPCS = [
+  "https://rpc.testnet.arc.network",
+  "https://rpc.drpc.testnet.arc.network",
+  "https://arc-testnet.drpc.org"
+];
 
-    function now() { return new Date().toLocaleTimeString(); }
+const ABI = [
+  "function getContributorCount() view returns (uint256)",
+  "function paused() view returns (bool)",
+  "function executeScheduledPayout() external",
+  "function manualPayout() external",
+  "function addContributor(address wallet, uint256 amount) external",
+  "function triggerPricePause(string reason) external",
+  "function resume() external"
+];
 
-    function addLog(msg, type = "dim") {
-      logCount++;
-      document.getElementById("log-count").innerText = logCount + " event" + (logCount !== 1 ? "s" : "");
-      const pip = { green: "pip-green", red: "pip-red", gold: "pip-gold", blue: "pip-blue", dim: "pip-dim" }[type] || "pip-dim";
-      const list = document.getElementById("log-list");
-      const el = document.createElement("div");
-      el.className = "log-item";
-      el.innerHTML = `<div class="log-pip ${pip}"></div><div class="log-content"><div class="log-msg">${msg}</div><div class="log-time">${now()}</div></div>`;
-      list.insertBefore(el, list.firstChild);
+let provider = null;
+let readContract = null;
+let signer = null;
+let logCount = 0;
+
+document.getElementById("init-time").innerText = new Date().toLocaleTimeString();
+
+// Try multiple RPCs until one works
+async function getProvider() {
+  for (const rpc of RPCS) {
+    try {
+      const p = new ethers.JsonRpcProvider(rpc);
+      await p.getBlockNumber();
+      return p;
+    } catch(e) { continue; }
+  }
+  return null;
+}
+
+function now() { return new Date().toLocaleTimeString(); }
+
+function log(msg, type="dim") {
+  logCount++;
+  document.getElementById("log-count").innerText = logCount + " event" + (logCount!==1?"s":"");
+  const pips = {g:"pip-g",r:"pip-r",b:"pip-b",gold:"pip-gold",dim:"pip-dim"};
+  const list = document.getElementById("log-list");
+  const el = document.createElement("div");
+  el.className = "log-item";
+  el.innerHTML = `<div class="log-pip ${pips[type]||"pip-dim"}"></div><div><div class="log-txt">${msg}</div><div class="log-time">${now()}</div></div>`;
+  list.insertBefore(el, list.firstChild);
+}
+
+function setTx(msg, state="") {
+  const el = document.getElementById("tx");
+  el.className = "status" + (state?" "+state:"");
+  el.innerHTML = state==="act-s" ? `<span class="spin"></span>${msg}` : msg;
+}
+
+async function loadData() {
+  if (!provider) {
+    provider = await getProvider();
+    if (!provider) { log("All RPCs failed — check connection", "r"); return; }
+    readContract = new ethers.Contract(CONTRACT, ABI, provider);
+  }
+  try {
+    const [bal, count, paused] = await Promise.all([
+      provider.getBalance(CONTRACT),
+      readContract.getContributorCount(),
+      readContract.paused()
+    ]);
+    const balNum = parseFloat(ethers.formatEther(bal));
+    document.getElementById("balance").innerText = balNum.toFixed(2);
+    document.getElementById("contributors").innerText = count.toString();
+    document.getElementById("lowBal").innerHTML = balNum < 100
+      ? '<div class="chip chip-r">⚠ Low Balance</div>'
+      : '<div class="chip chip-g">✓ Healthy</div>';
+    document.getElementById("status").innerHTML = paused
+      ? '<div class="chip chip-r">⛔ Paused</div>'
+      : '<div class="chip chip-g">● Active</div>';
+    log("Data refreshed", "b");
+  } catch(e) {
+    log("Load failed: " + e.message.slice(0,60), "r");
+  }
+}
+
+async function addArcNetwork() {
+  try {
+    await window.ethereum.request({
+      method: "wallet_addEthereumChain",
+      params: [{
+        chainId: ARC_CHAIN_HEX,
+        chainName: "Arc Testnet",
+        nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
+        rpcUrls: RPCS,
+        blockExplorerUrls: ["https://testnet.arcscan.app"]
+      }]
+    });
+  } catch(e) { log("Network switch failed: " + e.message.slice(0,60), "r"); }
+}
+
+async function checkNetwork() {
+  if (!window.ethereum) return;
+  const chainId = await window.ethereum.request({ method: "eth_chainId" });
+  const isArc = parseInt(chainId, 16) === ARC_CHAIN_ID;
+  document.getElementById("net-banner").classList.toggle("show", !isArc);
+  return isArc;
+}
+
+async function connectWallet() {
+  // Toggle disconnect
+  if (signer) {
+    signer = null;
+    const btn = document.getElementById("connect-btn");
+    btn.innerText = "Connect Wallet";
+    btn.classList.remove("connected");
+    log("Wallet disconnected", "dim");
+    return;
+  }
+
+  if (!window.ethereum) {
+    log("MetaMask not found — please install it at metamask.io", "r");
+    window.open("https://metamask.io", "_blank");
+    return;
+  }
+
+  try {
+    await window.ethereum.request({ method: "eth_requestAccounts" });
+    const onArc = await checkNetwork();
+    if (!onArc) {
+      log("Please switch to Arc Testnet", "gold");
+      await addArcNetwork();
+      return;
     }
+    const web3p = new ethers.BrowserProvider(window.ethereum);
+    signer = await web3p.getSigner();
+    const addr = await signer.getAddress();
+    const btn = document.getElementById("connect-btn");
+    btn.innerText = addr.slice(0,6) + "..." + addr.slice(-4) + " ✕";
+    btn.classList.add("connected");
+    log("Wallet connected: " + addr, "g");
+    setTx("Wallet connected. Ready to operate.");
+    loadData();
+  } catch(e) {
+    log("Connection failed: " + e.message.slice(0,60), "r");
+  }
+}
 
-    function setTx(msg, state = "") {
-      const el = document.getElementById("tx-display");
-      el.className = "status-bar" + (state ? " " + state : "");
-      el.innerHTML = state === "active" ? `<span class="spinner"></span>${msg}` : msg;
+function needWallet() {
+  if (!signer) {
+    log("Connect your wallet first", "r");
+    setTx("Connect wallet to execute transactions", "err");
+    return false;
+  }
+  return true;
+}
+
+function getWrite() {
+  return new ethers.Contract(CONTRACT, ABI, signer);
+}
+
+async function manualPayout() {
+  if (!needWallet()) return;
+  try {
+    setTx("Broadcasting manual payout...", "act-s");
+    log("Initiating manual payout...", "gold");
+    const tx = await getWrite().manualPayout();
+    await tx.wait();
+    setTx("✓ Payout confirmed — " + tx.hash, "ok");
+    log("Manual payout executed — " + tx.hash.slice(0,20) + "...", "g");
+    loadData();
+  } catch(e) { setTx("Error: " + e.message.slice(0,100), "err"); log("Payout failed: " + e.message.slice(0,60), "r"); }
+}
+
+async function scheduledPayout() {
+  if (!needWallet()) return;
+  try {
+    setTx("Checking schedule...", "act-s");
+    const tx = await getWrite().executeScheduledPayout();
+    await tx.wait();
+    setTx("✓ Scheduled payout executed — " + tx.hash, "ok");
+    log("Scheduled payout done — " + tx.hash.slice(0,20) + "...", "g");
+    loadData();
+  } catch(e) { setTx("Error: " + e.message.slice(0,100), "err"); log("Failed: " + e.message.slice(0,60), "r"); }
+}
+
+async function pauseTreasury() {
+  if (!needWallet()) return;
+  try {
+    setTx("Pausing treasury...", "act-s");
+    const tx = await getWrite().triggerPricePause("Manual pause via dashboard");
+    await tx.wait();
+    setTx("⛔ Treasury paused — " + tx.hash, "err");
+    log("Treasury paused — " + tx.hash.slice(0,20) + "...", "r");
+    loadData();
+  } catch(e) { setTx("Error: " + e.message.slice(0,100), "err"); log("Failed: " + e.message.slice(0,60), "r"); }
+}
+
+async function resumeTreasury() {
+  if (!needWallet()) return;
+  try {
+    setTx("Resuming treasury...", "act-s");
+    const tx = await getWrite().resume();
+    await tx.wait();
+    setTx("✓ Treasury resumed — " + tx.hash, "ok");
+    log("Treasury resumed — " + tx.hash.slice(0,20) + "...", "g");
+    loadData();
+  } catch(e) { setTx("Error: " + e.message.slice(0,100), "err"); log("Failed: " + e.message.slice(0,60), "r"); }
+}
+
+async function addContributor() {
+  if (!needWallet()) return;
+  const addr = document.getElementById("c-addr").value.trim();
+  const amt = document.getElementById("c-amt").value.trim();
+  if (!addr || !amt) { log("Enter wallet address and USDC amount", "r"); return; }
+  if (!addr.startsWith("0x") || addr.length !== 42) { log("Invalid wallet address", "r"); return; }
+  try {
+    setTx("Adding contributor...", "act-s");
+    const tx = await getWrite().addContributor(addr, ethers.parseUnits(amt, 6));
+    await tx.wait();
+    setTx("✓ Contributor added — " + tx.hash, "ok");
+    log("Contributor added: " + addr.slice(0,10) + " / " + amt + " USDC", "g");
+    document.getElementById("c-addr").value = "";
+    document.getElementById("c-amt").value = "";
+    loadData();
+  } catch(e) { setTx("Error: " + e.message.slice(0,100), "err"); log("Failed: " + e.message.slice(0,60), "r"); }
+}
+
+// Auto-detect network changes
+if (window.ethereum) {
+  window.ethereum.on("chainChanged", () => { checkNetwork(); location.reload(); });
+  window.ethereum.on("accountsChanged", (accounts) => {
+    if (accounts.length === 0) {
+      signer = null;
+      document.getElementById("connect-btn").innerText = "Connect Wallet";
+      document.getElementById("connect-btn").classList.remove("connected");
+      log("Wallet disconnected", "dim");
     }
+  });
+}
 
-    async function loadData() {
-      try {
-        const bal = await provider.getBalance("0x6340D848795eB92C4A7E99b1C7FFd428299C44D8");
-        const count = await readContract.getContributorCount();
-        const paused = await readContract.paused();
-        const low = bal < ethers.parseEther("100");
-        document.getElementById("balance").innerText = parseFloat(ethers.formatEther(bal)).toFixed(2);
-        document.getElementById("contributors").innerText = count.toString();
-        document.getElementById("lowBalanceVal").innerHTML = low
-          ? '<div class="stat-chip chip-red">⚠ Low Balance</div>'
-          : '<div class="stat-chip chip-green">✓ Healthy</div>';
-        document.getElementById("pausedVal").innerHTML = paused
-          ? '<div class="stat-chip chip-red">⛔ Paused</div>'
-          : '<div class="stat-chip chip-green">● Active</div>';
-        addLog("On-chain data refreshed", "blue");
-      } catch (e) { addLog("Failed to load: " + e.message.slice(0, 60), "red"); }
-      async function connectWallet() {
-        if (!window.ethereum) return addLog("MetaMask not detected. Please install it.", "red");
-        if (signer) {
-          signer = null;
-          const btn = document.getElementById("connect-btn");
-          btn.innerText = "Connect Wallet";
-          btn.classList.remove("connected");
-          addLog("Wallet disconnected", "dim");
-          return;
-        }
-        try {
-          const p = new ethers.BrowserProvider(window.ethereum);
-          await p.send("eth_requestAccounts", []);
-          signer = await p.getSigner();
-          const addr = await signer.getAddress();
-          const btn = document.getElementById("connect-btn");
-          btn.innerText = addr.slice(0, 6) + "..." + addr.slice(-4) + " ✕";
-          btn.classList.add("connected");
-          addLog("Wallet connected: " + addr, "green");
-          loadData();
-        } catch (e) { addLog("Connection failed: " + e.message.slice(0, 60), "red"); }
-      }
-
-      function getWrite() {
-        if (!signer) { addLog("Connect wallet first", "red"); return null; }
-        return new ethers.Contract(CONTRACT, ABI, signer);
-      }
-
-      async function manualPayout() {
-        const c = getWrite(); if (!c) return;
-        try {
-          setTx("Broadcasting manual payout...", "active");
-          addLog("Initiating manual payout...", "gold");
-          const tx = await c.manualPayout();
-          await tx.wait();
-          setTx("✓ Payout confirmed — " + tx.hash, "success");
-          addLog("Manual payout executed — " + tx.hash.slice(0, 18) + "...", "green");
-          loadData();
-        } catch (e) { setTx("Failed: " + e.message.slice(0, 80), "error"); addLog("Payout failed: " + e.message.slice(0, 60), "red"); }
-      }
-
-      async function scheduledPayout() {
-        const c = getWrite(); if (!c) return;
-        try {
-          setTx("Checking schedule...", "active");
-          const tx = await c.executeScheduledPayout();
-          await tx.wait();
-          setTx("✓ Scheduled payout done — " + tx.hash, "success");
-          addLog("Scheduled payout executed — " + tx.hash.slice(0, 18) + "...", "green");
-          loadData();
-        } catch (e) { setTx("Failed: " + e.message.slice(0, 80), "error"); addLog("Failed: " + e.message.slice(0, 60), "red"); }
-      }
-
-      async function pauseTreasury() {
-        const c = getWrite(); if (!c) return;
-        try {
-          setTx("Pausing treasury...", "active");
-          const tx = await c.triggerPricePause("Manual pause via dashboard");
-          await tx.wait();
-          setTx("⛔ Treasury paused — " + tx.hash, "error");
-          addLog("Treasury paused — " + tx.hash.slice(0, 18) + "...", "red");
-          loadData();
-        } catch (e) { setTx("Failed: " + e.message.slice(0, 80), "error"); addLog("Pause failed: " + e.message.slice(0, 60), "red"); }
-      }
-
-      async function resumeTreasury() {
-        const c = getWrite(); if (!c) return;
-        try {
-          setTx("Resuming...", "active");
-          const tx = await c.resume();
-          await tx.wait();
-          setTx("✓ Treasury active — " + tx.hash, "success");
-          addLog("Treasury resumed — " + tx.hash.slice(0, 18) + "...", "green");
-          loadData();
-        } catch (e) { setTx("Failed: " + e.message.slice(0, 80), "error"); addLog("Resume failed: " + e.message.slice(0, 60), "red"); }
-      }
-
-      async function addContributor() {
-        const c = getWrite(); if (!c) return;
-        const addr = document.getElementById("contrib-addr").value.trim();
-        const amount = document.getElementById("contrib-amount").value.trim();
-        if (!addr || !amount) return addLog("Enter wallet address and amount", "red");
-        try {
-          setTx("Adding contributor...", "active");
-          const tx = await c.addContributor(addr, ethers.parseUnits(amount, 6));
-          await tx.wait();
-          setTx("✓ Contributor added — " + tx.hash, "success");
-          addLog("Contributor added: " + addr.slice(0, 10) + "... / " + amount + " USDC", "green");
-          document.getElementById("contrib-addr").value = "";
-          document.getElementById("contrib-amount").value = "";
-          loadData();
-        } catch (e) { setTx("Failed: " + e.message.slice(0, 80), "error"); addLog("Failed: " + e.message.slice(0, 60), "red"); }
-      }
-
-      loadData();
-  </script>
+// Init
+loadData();
+checkNetwork();
+</script>
 </body>
-
 </html>
