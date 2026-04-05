@@ -1,21 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-interface IERC20 {
-    function transfer(address to, uint256 amount) external returns (bool);
-    function balanceOf(address account) external view returns (uint256);
-}
-
 contract ArcTreasury {
     address public owner;
-    IERC20 public usdc;
-
     uint256 public lowBalanceThreshold;
     uint256 public lastPayoutTime;
     uint256 public payoutInterval;
-    uint256 public priceDropThreshold; // in basis points e.g. 500 = 5%
-
-    bool public paused;
+    bool public isPaused;
 
     struct Contributor {
         address wallet;
@@ -36,90 +27,69 @@ contract ArcTreasury {
     }
 
     modifier notPaused() {
-        require(!paused, "Treasury is paused");
+        require(!isPaused, "Treasury is paused");
         _;
     }
 
-    constructor(
-        address _usdc,
-        uint256 _lowBalanceThreshold,
-        uint256 _payoutInterval
-    ) {
+    constructor(uint256 _lowBalanceThreshold, uint256 _payoutInterval) {
         owner = msg.sender;
-        usdc = IERC20(_usdc);
         lowBalanceThreshold = _lowBalanceThreshold;
         payoutInterval = _payoutInterval;
         lastPayoutTime = block.timestamp;
     }
 
-    // Deposit USDC into treasury
-    function deposit(uint256 amount) external onlyOwner {
-        require(
-            usdc.balanceOf(msg.sender) >= amount,
-            "Insufficient balance"
-        );
-        emit FundsDeposited(amount);
+    receive() external payable {
+        emit FundsDeposited(msg.value);
     }
 
-    // Add a contributor
     function addContributor(address wallet, uint256 amount) external onlyOwner {
         contributors.push(Contributor(wallet, amount, true));
     }
 
-    // Remove a contributor
     function removeContributor(uint256 index) external onlyOwner {
         contributors[index].active = false;
     }
 
-    // Trigger: scheduled payout
     function executeScheduledPayout() external notPaused {
-        require(
-            block.timestamp >= lastPayoutTime + payoutInterval,
-            "Too early"
-        );
+        require(block.timestamp >= lastPayoutTime + payoutInterval, "Too early");
         _payAll();
         lastPayoutTime = block.timestamp;
     }
 
-    // Trigger: low balance check
     function checkLowBalance() external view returns (bool) {
-        return usdc.balanceOf(address(this)) < lowBalanceThreshold;
+        return address(this).balance < lowBalanceThreshold;
     }
 
-    // Trigger: pause if price drops (called by owner with off-chain price data)
     function triggerPricePause(string calldata reason) external onlyOwner {
-        paused = true;
+        isPaused = true;
         emit TreasuryPaused(reason);
     }
 
     function resume() external onlyOwner {
-        paused = false;
+        isPaused = false;
         emit TreasuryResumed();
     }
 
-    // Internal: pay all active contributors
     function _payAll() internal {
+        require(contributors.length > 0, "No contributors");
         for (uint256 i = 0; i < contributors.length; i++) {
             if (contributors[i].active) {
-                usdc.transfer(contributors[i].wallet, contributors[i].amount);
-                emit PayoutExecuted(
-                    contributors[i].wallet,
-                    contributors[i].amount,
-                    block.timestamp
-                );
+                (bool success, ) = contributors[i].wallet.call{value: contributors[i].amount}("");
+                require(success, "Transfer failed");
+                emit PayoutExecuted(contributors[i].wallet, contributors[i].amount, block.timestamp);
             }
         }
     }
 
-    // Manual payout override by owner
     function manualPayout() external onlyOwner notPaused {
         _payAll();
     }
 
-    // Withdraw all funds back to owner
     function withdrawAll() external onlyOwner {
-        uint256 bal = usdc.balanceOf(address(this));
-        usdc.transfer(owner, bal);
+        uint256 bal = address(this).balance;
+        require(bal > 0, "Nothing to withdraw");
+        (bool success, ) = owner.call{value: bal}("");
+        require(success, "Withdraw failed");
     }
 
     function getContributorCount() external view returns (uint256) {
@@ -127,6 +97,6 @@ contract ArcTreasury {
     }
 
     function getTreasuryBalance() external view returns (uint256) {
-    return address(this).balance / 1e12;
-}
+        return address(this).balance;
+    }
 }

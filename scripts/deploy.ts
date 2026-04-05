@@ -14,11 +14,10 @@ async function main() {
 
     const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, wallet);
 
-    const USDC_ADDRESS = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238";
-    const LOW_BALANCE_THRESHOLD = ethers.parseUnits("100", 6);
+    const LOW_BALANCE_THRESHOLD = ethers.parseEther("100");
     const PAYOUT_INTERVAL = 7 * 24 * 60 * 60;
 
-    const treasury = await factory.deploy(USDC_ADDRESS, LOW_BALANCE_THRESHOLD, PAYOUT_INTERVAL);
+    const treasury = await factory.deploy(LOW_BALANCE_THRESHOLD, PAYOUT_INTERVAL);
     await treasury.waitForDeployment();
     console.log("ArcTreasury deployed to:", await treasury.getAddress());
 }
